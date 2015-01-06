@@ -114,6 +114,7 @@ public class SerialBusBinding extends AbstractActiveBinding<SerialBusBindingProv
 			String refreshIntervalString = (String) config.get("refresh");
 			if (StringUtils.isNotBlank(refreshIntervalString)) {
 				refreshInterval = Long.parseLong(refreshIntervalString);
+				logger.info("set refresh interval to " + refreshInterval);
 			}
 			
 			// read further config parameters here ...

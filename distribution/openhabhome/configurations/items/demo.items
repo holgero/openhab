@@ -73,14 +73,14 @@ Rollershutter Shutter_FF_Office_Window	"Office Window"	(FF_Office, Shutters)
 Rollershutter Shutter_FF_Office_Door 	"Office Door"	(FF_Office, Shutters)
 
 /* Indoor Temperatures */
-Number Temperature_GF_Corridor 	"Temperature [%.1f °C]"	<temperature>	(Temperature, GF_Corridor)
-Number Temperature_GF_Toilet 	"Temperature [%.1f °C]"	<temperature>	(Temperature, GF_Toilet)
-Number Temperature_GF_Living 	"Temperature [%.1f °C]"	<temperature>	(Temperature, GF_Living)
-Number Temperature_GF_Kitchen 	"Temperature [%.1f °C]"	<temperature>	(Temperature, GF_Kitchen)
-Number Temperature_FF_Bath 		"Temperature [%.1f °C]"	<temperature>	(Temperature, FF_Bath)
-Number Temperature_FF_Office 	"Temperature [%.1f °C]"	<temperature>	(Temperature, FF_Office)
-Number Temperature_FF_Child 	"Temperature [%.1f °C]"	<temperature>	(Temperature, FF_Child)
-Number Temperature_FF_Bed 		"Temperature [%.1f °C]"	<temperature>	(Temperature, FF_Bed)
+Number Temperature_GF_Corridor 	"Temperature [%.1f °C]"	<temperature>	(Temperature, GF_Corridor) { serialbus="getValue=/sensor1/radiatorTemperature" }
+Number Temperature_GF_Toilet 	"Temperature [%.1f °C]"	<temperature>	(Temperature, GF_Toilet) { serialbus="getValue=/sensor2/radiatorTemperature" }
+Number Temperature_GF_Living 	"Temperature [%.1f °C]"	<temperature>	(Temperature, GF_Living) { serialbus="getValue=/sensos3/radiatorTemperature" }
+Number Temperature_GF_Kitchen 	"Temperature [%.1f °C]"	<temperature>	(Temperature, GF_Kitchen) { serialbus="getValue=/sensor4/coreTemperature" }
+Number Temperature_FF_Bath 		"Temperature [%.1f °C]"	<temperature>	(Temperature, FF_Bath) { serialbus="getValue=/sensor5/fungidizity" }
+Number Temperature_FF_Office 	"Temperature [%.1f °C]"	<temperature>	(Temperature, FF_Office) { serialbus="setValue=/sensor6/radiatorTemperature" }
+Number Temperature_FF_Child 	"Temperature [%.1f °C]"	<temperature>	(Temperature, FF_Child) { serialbus="anythingElse=/sensor7/radiatorTemperature" }
+Number Temperature_FF_Bed 		"Temperature [%.1f °C]"	<temperature>	(Temperature, FF_Bed) { serialbus="=/sensor8/radiatorTemperature" }
 
 /* Windows */
 Contact Window_GF_Frontdoor 	"Frontdoor [MAP(en.map):%s]"		(GF_Corridor, Windows)
