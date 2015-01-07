@@ -8,6 +8,7 @@
  */
 package org.openhab.binding.serialbus;
 
+import org.openhab.binding.serialbus.internal.SerialBusCommand;
 import org.openhab.core.binding.BindingProvider;
 
 /**
@@ -15,5 +16,9 @@ import org.openhab.core.binding.BindingProvider;
  * @since 0.1.0
  */
 public interface SerialBusBindingProvider extends BindingProvider {
+
+	SerialBusCommand getCommand(String itemName);
+
+	String getPath(String itemName);
 
 }

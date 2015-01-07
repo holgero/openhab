@@ -9,11 +9,8 @@
 package org.openhab.binding.serialbus.internal;
 
 import org.openhab.binding.serialbus.SerialBusBindingProvider;
-import org.openhab.binding.serialbus.internal.SerialBusGenericBindingProvider.SerialBusBindingConfig;
 import org.openhab.core.binding.BindingConfig;
 import org.openhab.core.items.Item;
-import org.openhab.core.library.items.DimmerItem;
-import org.openhab.core.library.items.SwitchItem;
 import org.openhab.model.item.binding.AbstractGenericBindingProvider;
 import org.openhab.model.item.binding.BindingConfigParseException;
 import org.slf4j.Logger;
@@ -21,18 +18,19 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This class is responsible for parsing the binding configuration.
- * 
+ *
  * @author holgero
  * @since 0.1.0
  */
 public class SerialBusGenericBindingProvider extends
 		AbstractGenericBindingProvider implements SerialBusBindingProvider {
-	private static final Logger logger = 
-			LoggerFactory.getLogger(SerialBusGenericBindingProvider.class);
+	private static final Logger logger = LoggerFactory
+			.getLogger(SerialBusGenericBindingProvider.class);
 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public String getBindingType() {
 		return "serialbus";
 	}
@@ -41,7 +39,7 @@ public class SerialBusGenericBindingProvider extends
 	 * @{inheritDoc
 	 */
 	@Override
-	public void validateItemType(Item item, String bindingConfig)
+	public void validateItemType(final Item item, final String bindingConfig)
 			throws BindingConfigParseException {
 		// if (!(item instanceof SwitchItem || item instanceof DimmerItem)) {
 		// throw new BindingConfigParseException("item '" + item.getName()
@@ -55,20 +53,51 @@ public class SerialBusGenericBindingProvider extends
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void processBindingConfiguration(String context, Item item,
-			String bindingConfig) throws BindingConfigParseException {
+	public void processBindingConfiguration(final String context,
+			final Item item, final String bindingConfig)
+					throws BindingConfigParseException {
 		super.processBindingConfiguration(context, item, bindingConfig);
 		logger.debug("processing binding configuration: " + bindingConfig);
-		
+
 		addBindingConfig(item, new SerialBusBindingConfig(bindingConfig));
 	}
 
 	class SerialBusBindingConfig implements BindingConfig {
+		SerialBusCommand command;
 		String path;
 
-		SerialBusBindingConfig(String bindingConfig) {
-			path = bindingConfig.split("=")[1];
+		SerialBusBindingConfig(final String bindingConfig)
+				throws BindingConfigParseException {
+			final String[] strings = bindingConfig.split("=");
+			if (strings.length != 2) {
+				throw new BindingConfigParseException(
+						"Invalid configuration: '" + bindingConfig + "'.");
+			}
+			try {
+				command = SerialBusCommand.valueOf(strings[0]);
+			} catch (final IllegalArgumentException e) {
+				throw (BindingConfigParseException) new BindingConfigParseException(
+						"Invalid configuration: '" + bindingConfig + "'.")
+				.initCause(e);
+			}
+			path = strings[1];
 		}
+	}
+
+	@Override
+	public SerialBusCommand getCommand(final String itemName) {
+		if (bindingConfigs.containsKey(itemName)) {
+			return ((SerialBusBindingConfig) bindingConfigs.get(itemName)).command;
+		}
+		return null;
+	}
+
+	@Override
+	public String getPath(final String itemName) {
+		if (bindingConfigs.containsKey(itemName)) {
+			return ((SerialBusBindingConfig) bindingConfigs.get(itemName)).path;
+		}
+		return null;
 	}
 
 }
