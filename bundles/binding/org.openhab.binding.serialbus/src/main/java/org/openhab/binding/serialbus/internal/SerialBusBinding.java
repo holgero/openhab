@@ -8,7 +8,10 @@
  */
 package org.openhab.binding.serialbus.internal;
 
+import java.io.IOException;
 import java.util.Dictionary;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.openhab.binding.serialbus.SerialBusBindingProvider;
@@ -29,8 +32,8 @@ import org.slf4j.LoggerFactory;
  * @since 0.1.0
  */
 public class SerialBusBinding extends
-		AbstractActiveBinding<SerialBusBindingProvider> implements
-		ManagedService {
+AbstractActiveBinding<SerialBusBindingProvider> implements
+ManagedService {
 
 	private static final Logger logger = LoggerFactory
 			.getLogger(SerialBusBinding.class);
@@ -40,18 +43,31 @@ public class SerialBusBinding extends
 	 * server (optional, defaults to 60000ms)
 	 */
 	private long refreshInterval = 60000;
+	private String hostName = "raspi2.";
+	private int port = 32032;
+	private SerialBusSocket socket;
 
 	public SerialBusBinding() {
 	}
 
 	@Override
 	public void activate() {
+		try {
+			socket = new SerialBusSocket(hostName, port);
+			logger.info("Socket connected to " + hostName + ":" + port);
+		} catch (final IOException e) {
+			logger.error("Failed to create socket", e);
+		}
 	}
 
 	@Override
 	public void deactivate() {
-		// deallocate resources here that are no longer needed and
-		// should be reset when activating this binding again
+		try {
+			socket = null;
+			SerialBusSocket.shutDownInternal();
+		} catch (final IOException e) {
+			logger.error("Failed to properly shutdown socket", e);
+		}
 	}
 
 	/**
@@ -84,9 +100,13 @@ public class SerialBusBinding extends
 				case getValue:
 					final double value = retrieveValue(provider
 							.getPath(itemName));
+					logger.debug(String.format("Got value '%.1f'", value));
 					eventPublisher.postUpdate(itemName, new DecimalType(value));
 					break;
 				case setValue:
+					logger.debug(String.format("setValue for '%s'",
+							provider.getPath(itemName)));
+					logger.error("setValue not (yet) implemented.");
 					break;
 				default:
 					throw new IllegalStateException("Unknown command "
@@ -96,8 +116,36 @@ public class SerialBusBinding extends
 		}
 	}
 
+	private static final Pattern PATH_PATTERN = Pattern
+			.compile("^/sensor(\\d+)/(.*)$");
+
 	private double retrieveValue(final String path) {
 		logger.debug("retrieve value for path '" + path + "'");
+		final Matcher matcher = PATH_PATTERN.matcher(path);
+		if (matcher.matches()) {
+			final int sensorNumber = Integer.parseInt(matcher.group(1));
+			final String subPath = matcher.group(2);
+			if (subPath.equals("radiatorTemperature")) {
+				final String errorMessage = String.format(
+						"Failed to read %s from sensor %d", subPath,
+						sensorNumber);
+				try {
+					return RawCommand
+							.byteToTemperature(RawCommand.GET_TEMPERATURE
+									.execute(socket, sensorNumber));
+				} catch (final PortShutDownException e) {
+					logger.error(errorMessage, e);
+				} catch (final IOException e) {
+					logger.error(errorMessage, e);
+				} catch (final PortTimeoutException e) {
+					logger.error(errorMessage, e);
+				}
+			} else {
+				logger.error("Subpath " + subPath + " not (yet) implemented.");
+			}
+		} else {
+			logger.error("Failed to parse path '" + path + "'.");
+		}
 		return 0;
 	}
 
@@ -122,7 +170,7 @@ public class SerialBusBinding extends
 		// the code being executed when a state was sent on the openHAB
 		// event bus goes here. This method is only called if one of the
 		// BindingProviders provide a binding for the given 'itemName'.
-		logger.debug("internalReceiveCommand() is called!");
+		logger.debug("internalReceiveUpdate() is called!");
 	}
 
 	/**
@@ -132,17 +180,22 @@ public class SerialBusBinding extends
 	public void updated(final Dictionary<String, ?> config)
 			throws ConfigurationException {
 		if (config != null) {
-
-			// to override the default refresh interval one has to add a
-			// parameter to openhab.cfg like
-			// <bindingName>:refresh=<intervalInMs>
 			final String refreshIntervalString = (String) config.get("refresh");
 			if (StringUtils.isNotBlank(refreshIntervalString)) {
 				refreshInterval = Long.parseLong(refreshIntervalString);
 				logger.info("set refresh interval to " + refreshInterval);
 			}
+			final String hostNameString = (String) config.get("hostName");
+			if (StringUtils.isNotBlank(hostNameString)) {
+				hostName = hostNameString;
+				logger.info("set hostName to " + hostName);
+			}
 
-			// read further config parameters here ...
+			final String portString = (String) config.get("port");
+			if (StringUtils.isNotBlank(portString)) {
+				port = Integer.parseInt(portString);
+				logger.info("set port to " + port);
+			}
 
 			setProperlyConfigured(true);
 		}
